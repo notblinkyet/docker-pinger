@@ -1,0 +1,14 @@
+env: "local" #dev/prod
+
+migration_path: "/home/hobonail/go_projects/docker-pinger/backend/migrations"
+
+storage:
+  host: "localhost"
+  port: 5432
+  username: "postgres"
+  dbname: "docker_pinger"
+
+server:
+  host: "localhost"
+  port: 9999
+  timeout: 1h

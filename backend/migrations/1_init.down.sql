@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS pings;
+DROP TABLE IF EXISTS last_pings;
+DROP TABLE IF EXISTS container;
