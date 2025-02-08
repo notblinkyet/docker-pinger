@@ -1,7 +1,7 @@
 package services
 
 import (
-	"github.com/notblinkyet/docker-pinger/backend/internal/models"
+	"github.com/notblinkyet/docker-pinger/backend/pkg/models"
 	"github.com/notblinkyet/docker-pinger/backend/src/storage"
 )
 

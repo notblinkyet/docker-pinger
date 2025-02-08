@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/notblinkyet/docker-pinger/backend/internal/models"
+	"github.com/notblinkyet/docker-pinger/backend/pkg/models"
 	"github.com/notblinkyet/docker-pinger/backend/src/services"
 )
 

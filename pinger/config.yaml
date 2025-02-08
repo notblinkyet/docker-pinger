@@ -1,0 +1,12 @@
+env: "local"
+
+server:
+  host: "localhost"
+  port: 8888
+  timeout: 10s
+
+api:
+  host: "localhost"
+  port: 9999
+  get_endpoint: "/api/containers"
+  post_endpoint: "/api/pings"

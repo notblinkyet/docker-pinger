@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/notblinkyet/docker-pinger/backend/internal/models"
+	"github.com/notblinkyet/docker-pinger/backend/pkg/models"
 )
 
 var (

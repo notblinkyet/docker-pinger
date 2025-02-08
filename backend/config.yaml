@@ -11,4 +11,4 @@ storage:
 server:
   host: "localhost"
   port: 9999
-  timeout: 1h
+  timeout: 10s
