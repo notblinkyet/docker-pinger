@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,7 +21,7 @@ type Api struct {
 }
 
 func (a *Api) GetContainers() ([]models.Container, error) {
-	url := fmt.Sprint("http://%s:%d%s", a.cfg.Host, a.cfg.Port, a.cfg.GetEndpoint)
+	url := fmt.Sprintf("http://%s:%d%s", a.cfg.Host, a.cfg.Port, a.cfg.GetEndpoint)
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -39,4 +40,26 @@ func (a *Api) GetContainers() ([]models.Container, error) {
 		return nil, err
 	}
 	return containers, nil
+}
+
+func (a *Api) Post(pings []models.Ping) error {
+	url := fmt.Sprintf("http://%s:%d%s", a.cfg.Host, a.cfg.Port, a.cfg.PostEndpoint)
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(pings)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Post(url, "application/json", &buf)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == 400 {
+			return ErrBadRequest
+		}
+		return ErrInternalServer
+	}
+	return nil
 }
