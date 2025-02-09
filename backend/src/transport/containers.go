@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/notblinkyet/docker-pinger/backend/pkg/models"
 	"github.com/notblinkyet/docker-pinger/backend/src/services"
 )
 
@@ -24,12 +25,12 @@ func NewContainerHandler(service services.IContainerService) *ContainerHandler {
 }
 
 func (handler *ContainerHandler) Create(ctx *gin.Context) {
-	var ip string
-	if err := ctx.ShouldBindBodyWithJSON(ip); err != nil {
+	var container models.Container
+	if err := ctx.ShouldBindBodyWithJSON(&container); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := handler.ContainerService.Create(ip); err != nil {
+	if err := handler.ContainerService.Create(container.Ip); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

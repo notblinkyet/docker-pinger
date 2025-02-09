@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	ErrIpAlreadyTracked error = errors.New("container with this ip is already tracke")
+	ErrIpAlreadyTracked error = errors.New("container with this ip is already tracked")
+	ErrNotExist         error = errors.New("this ip don't tracked")
 )
 
 type IContainerStorage interface {
@@ -32,9 +33,9 @@ func NewContainerStorage(pool *pgxpool.Pool) *ContainerStorage {
 
 func (storage *ContainerStorage) GetByIpInTx(tx pgx.Tx, ip string) (*models.Container, error) {
 
-	sql := `SELECT id, ip FROM container WHERE ip = $1;`
+	sql := `SELECT id, ip, is_tracked FROM containers WHERE ip = $1;`
 	var container models.Container
-	err := tx.QueryRow(context.Background(), sql, ip).Scan(&container.Id, &container.Ip)
+	err := tx.QueryRow(context.Background(), sql, ip).Scan(&container.Id, &container.Ip, &container.IsTracked)
 	if err != nil {
 		//TODO logs
 		return nil, err
@@ -44,6 +45,7 @@ func (storage *ContainerStorage) GetByIpInTx(tx pgx.Tx, ip string) (*models.Cont
 
 func (storage *ContainerStorage) Create(ip string) error {
 	const op = "storage/container/create"
+	ctx := context.Background()
 
 	tx, err := storage.pool.Begin(context.Background())
 	if err != nil {
@@ -51,28 +53,48 @@ func (storage *ContainerStorage) Create(ip string) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	defer func() {
+	defer tx.Rollback(ctx)
+
+	container, err := storage.GetByIpInTx(tx, ip)
+	fmt.Println(container)
+
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		//TODO logs
+		return err
+	} else if container != nil && !container.IsTracked {
+		sql :=
+			`
+          UPDATE containers
+          SET is_tracked = TRUE
+          WHERE id = $1;
+        `
+		fmt.Printf("Updating container ID: %d, is_tracked: %t\n", container.Id, true)
+
+		result, err := tx.Exec(ctx, sql, container.Id)
 		if err != nil {
 			//TODO logs
-			tx.Rollback(context.Background())
+			return fmt.Errorf("%s:%w", op, err)
 		}
-	}()
 
-	_, err = storage.GetByIpInTx(tx, ip)
-
-	if err == nil {
+		rowsAffected := result.RowsAffected()
+		if rowsAffected == 0 {
+			//TODO logs
+			return fmt.Errorf("%s: no rows updated", op)
+		}
+		err = tx.Commit(ctx)
+		if err != nil {
+			return err
+		}
+		return nil
+	} else if container != nil {
 		//TODO logs
-		return ErrIpAlreadyTracked
-	}
-	if !errors.Is(err, pgx.ErrNoRows) {
-		//TODO logs
-		return fmt.Errorf("%s:%w", op, err)
+		return fmt.Errorf("%s:%w", op, ErrIpAlreadyTracked)
 	}
 
-	sql := `INSERT INTO container(ip)
-			VALUES ($1);
+	sql := `INSERT INTO containers(ip, is_tracked)
+			VALUES ($1, $2);
 	`
-	_, err = tx.Exec(context.Background(), sql, ip)
+	_, err = tx.Exec(context.Background(), sql, ip, true)
 	if err != nil {
 		//TODO logs
 		return fmt.Errorf("%s:%w", op, err)
@@ -100,21 +122,22 @@ func (storage *ContainerStorage) Delete(ip string) error {
 		}
 	}()
 
-	_, err = storage.GetByIpInTx(tx, ip)
+	container, err := storage.GetByIpInTx(tx, ip)
 
-	if err == nil {
+	if err != nil {
 		//TODO logs
-		return ErrIpAlreadyTracked
-	}
-	if !errors.Is(err, pgx.ErrNoRows) {
-		//TODO logs
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("%s:%w", op, ErrNotExist)
+		}
 		return fmt.Errorf("%s:%w", op, err)
 	}
 
-	sql := `DELETE FROM container
+	sql := `
+		UPDATE containers
+		SET is_tracked=FALSE
 		WHERE id=$1;
 	`
-	_, err = tx.Exec(context.Background(), sql, ip)
+	_, err = tx.Exec(context.Background(), sql, container.Id)
 	if err != nil {
 		//TODO logs
 		return fmt.Errorf("%s:%w", op, err)
@@ -129,7 +152,11 @@ func (storage *ContainerStorage) Delete(ip string) error {
 func (storage *ContainerStorage) GetAll() ([]models.Container, error) {
 	const op = "storage/container/getall"
 	containers := make([]models.Container, 0, 10)
-	sql := `SELECT id, ip FROM container;`
+	sql := `
+		SELECT id, ip
+		FROM containers
+		WHERE is_tracked=TRUE;
+		`
 	rows, err := storage.pool.Query(context.Background(), sql)
 	if err != nil {
 		//TODO logs
@@ -138,6 +165,7 @@ func (storage *ContainerStorage) GetAll() ([]models.Container, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var container models.Container
+		container.IsTracked = true
 		err = rows.Scan(
 			&container.Id,
 			&container.Ip,
