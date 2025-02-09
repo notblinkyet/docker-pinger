@@ -4,7 +4,8 @@ import "time"
 
 type Ping struct {
 	Id          int
-	ContainerID int
+	ContainerId int
+	Ip          string
 	Latency     time.Duration
 	LastSuccess time.Time
 	PingAt      time.Time

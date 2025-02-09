@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/notblinkyet/docker-pinger/backend/pkg/models"
@@ -23,25 +24,30 @@ func (pinger *Pinger) PostIp(update []models.Container) {
 }
 
 func (pinger *Pinger) PingAll() []models.Ping {
-	chanel := make(chan models.Ping)
+	var m sync.Mutex
+	var w sync.WaitGroup
 	pings := make([]models.Ping, 0, len(pinger.Ips))
-
 	for ip := range pinger.Ips {
-		go PingOne(chanel, ip)
-		ping := <-chanel
-		pings = append(pings, ping)
+		w.Add(1)
+		go func(ip string) {
+			defer w.Done()
+			ping := PingOne(ip)
+			m.Lock()
+			pings = append(pings, *ping)
+			m.Unlock()
+		}(ip)
 	}
+	w.Wait()
 	return pings
 }
 
-func PingOne(out chan<- models.Ping, ip string) {
+func PingOne(ip string) *models.Ping {
 	data, err := exec.Command("ping", "-c", "1", "-W", "1", ip).Output()
 	if err != nil {
-		out <- models.Ping{
+		return &models.Ping{
 			PingAt:  time.Now(),
 			Success: false,
 		}
-		return
 	}
 	output := string(data)
 	if strings.Contains(output, "0% packet loss") {
@@ -49,19 +55,20 @@ func PingOne(out chan<- models.Ping, ip string) {
 		matches := re.FindStringSubmatch(output)
 		if len(matches) > 1 {
 			latency, _ := strconv.ParseFloat(matches[1], 64)
-			out <- models.Ping{
+			nanoseconds := int64(latency * 1000000)
+			return &models.Ping{
 				PingAt:  time.Now(),
 				Success: true,
-				Latency: latency * (time.Millisecond),
+				Latency: time.Duration(nanoseconds),
 			}
 		} else {
-			out <- models.Ping{
+			return &models.Ping{
 				PingAt:  time.Now(),
 				Success: true,
 			}
 		}
 	} else {
-		out <- models.Ping{
+		return &models.Ping{
 			PingAt:  time.Now(),
 			Success: false,
 		}

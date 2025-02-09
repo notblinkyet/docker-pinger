@@ -1,2 +1,6 @@
-github.com/notblinkyet/docker-pinger/backend v0.0.0-20250208125840-03c8160acbfb h1:gUy180HZHVoonFxKvZeau95mCQisO9oA2oXx9uNNJ4g=
-github.com/notblinkyet/docker-pinger/backend v0.0.0-20250208125840-03c8160acbfb/go.mod h1:fzkaEMG7GVh1k/KEFl2UkdFvAaRvkZGTt8w9VJ4mg1o=
+github.com/notblinkyet/docker-pinger/backend v0.0.0-20250208184646-63c8650c1911 h1:O3A5ks8mBTtG5nICTzJ8S65+8CZClxanxMmkL7QmJfA=
+github.com/notblinkyet/docker-pinger/backend v0.0.0-20250208184646-63c8650c1911/go.mod h1:fzkaEMG7GVh1k/KEFl2UkdFvAaRvkZGTt8w9VJ4mg1o=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
+gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=

@@ -47,7 +47,7 @@ func Load(path string) (*Config, error) {
 }
 
 func MustLoad() *Config {
-	path := os.Getenv("CONFIG_PATH")
+	path := os.Getenv("BACKEND_CONFIG_PATH")
 	if path == "" {
 		panic(ErrFoundConfigPath)
 	}

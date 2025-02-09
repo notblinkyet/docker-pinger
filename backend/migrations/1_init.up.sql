@@ -11,12 +11,3 @@ CREATE TABLE IF NOT EXISTS ping(
     ping_at TIMESTAMP DEFAULT NOW(),
     FOREIGN KEY (container_id) REFERENCES container (id)
 );
-
-CREATE TABLE IF NOT EXISTS last_ping(
-    id INT PRIMARY KEY,
-    container_id INT UNIQUE,
-    latency INT NOT NULL,
-    last_success_at TIMESTAMP DEFAULT NULL,
-    ping_at TIMESTAMP DEFAULT NOW(),
-    FOREIGN KEY (container_id) REFERENCES container (id) ON DELETE CASCADE
-);

@@ -17,11 +17,17 @@ var (
 )
 
 type Api struct {
-	cfg *config.Api
+	Cfg *config.Api
+}
+
+func NewApi(cfg *config.Api) *Api {
+	return &Api{
+		Cfg: cfg,
+	}
 }
 
 func (a *Api) GetContainers() ([]models.Container, error) {
-	url := fmt.Sprintf("http://%s:%d%s", a.cfg.Host, a.cfg.Port, a.cfg.GetEndpoint)
+	url := fmt.Sprintf("http://%s:%d%s", a.Cfg.Host, a.Cfg.Port, a.Cfg.GetEndpoint)
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -43,7 +49,7 @@ func (a *Api) GetContainers() ([]models.Container, error) {
 }
 
 func (a *Api) Post(pings []models.Ping) error {
-	url := fmt.Sprintf("http://%s:%d%s", a.cfg.Host, a.cfg.Port, a.cfg.PostEndpoint)
+	url := fmt.Sprintf("http://%s:%d%s", a.Cfg.Host, a.Cfg.Port, a.Cfg.PostEndpoint)
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(pings)
 	if err != nil {
