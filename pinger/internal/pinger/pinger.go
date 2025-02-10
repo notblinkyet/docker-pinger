@@ -1,55 +1,69 @@
 package pinger
 
 import (
+	"log"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgtype"
 	"github.com/notblinkyet/docker-pinger/backend/pkg/models"
+	"github.com/notblinkyet/docker-pinger/pinger/internal/client"
 )
 
 type Pinger struct {
-	Ips map[string]int
+	Ips    *sync.Map
+	count  *atomic.Int64
+	client *client.Client
+	logger *log.Logger
 }
 
-func (pinger *Pinger) PostIp(update []models.Container) {
-	UpdateMap := make(map[string]int, len(update))
-	for _, container := range update {
-		UpdateMap[container.Ip] = container.Id
+func NewPinger(newIps []string, client *client.Client, logger *log.Logger) *Pinger {
+	Ips := &sync.Map{}
+	count := &atomic.Int64{}
+	count.Store(int64(len(newIps)))
+	for _, ip := range newIps {
+		Ips.Store(ip, struct{}{})
 	}
-	pinger.Ips = UpdateMap
+	return &Pinger{
+		Ips:    Ips,
+		count:  count,
+		client: client,
+		logger: logger,
+	}
 }
 
 func (pinger *Pinger) PingAll() []models.Ping {
 	var m sync.Mutex
 	var w sync.WaitGroup
-	pings := make([]models.Ping, 0, len(pinger.Ips))
-	for ip, id := range pinger.Ips {
+	pings := make([]models.Ping, 0, pinger.count.Load())
+	pinger.Ips.Range(func(key, value any) bool {
 		w.Add(1)
-		go func(ip string, id int) {
+		ip := key.(string)
+		go func(ip string) {
 			defer w.Done()
-			ping := PingOne(&models.NewContainer(id, ip))
+			ping := PingOne(ip)
 			m.Lock()
 			pings = append(pings, *ping)
 			m.Unlock()
-		}(ip, id)
-	}
+		}(ip)
+		return true
+	})
 	w.Wait()
 	return pings
 }
 
-func PingOne(container *models.Container) *models.Ping {
-	data, err := exec.Command("ping", "-c", "1", "-W", "1", container.Ip).Output()
+func PingOne(ip string) *models.Ping {
+	data, err := exec.Command("ping", "-c", "1", "-W", "1", ip).Output()
 	if err != nil {
 		return &models.Ping{
-			PingAt:      time.Now(),
-			Success:     false,
-			ContainerID: container.Id,
-			Ip:          ip,
+			PingAt:  time.Now(),
+			Success: false,
+			Ip:      ip,
 		}
 	}
 	output := string(data)
@@ -61,31 +75,36 @@ func PingOne(container *models.Container) *models.Ping {
 			nanoseconds := int64(latency * 1000000)
 			return &models.Ping{
 				PingAt: time.Now(),
-				LastSuccess: pgtype.Timestamp{
-					time: time.Now(),
+				LastSuccess: pgtype.Timestamptz{
+					Time: time.Now(),
 				},
-				Success:     true,
-				Latency:     time.Duration(nanoseconds),
-				ContainerID: container.Id,
-				Ip:          ip,
+				Success: true,
+				Latency: time.Duration(nanoseconds),
+				Ip:      ip,
 			}
 		} else {
 			return &models.Ping{
-				PingAt:      time.Now(),
-				Success:     true,
-				ContainerID: container.Id,
-				Ip:          ip,
-				LastSuccess: pgtype.Timestamp{
-					time: time.Now(),
+				PingAt:  time.Now(),
+				Success: true,
+				Ip:      ip,
+				LastSuccess: pgtype.Timestamptz{
+					Time: time.Now(),
 				},
 			}
 		}
 	} else {
 		return &models.Ping{
-			PingAt:      time.Now(),
-			Success:     false,
-			ContainerID: container.Id,
-			Ip:          ip,
+			PingAt:  time.Now(),
+			Success: false,
+			Ip:      ip,
 		}
 	}
+}
+
+func (pinger *Pinger) PingOnceAfterDelay(delay time.Duration) {
+	time.AfterFunc(delay, func() {
+		pings := pinger.PingAll()
+		err := pinger.client.Post(pings)
+		pinger.logger.Println(err)
+	})
 }

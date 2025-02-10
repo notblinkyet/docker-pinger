@@ -12,7 +12,8 @@ import (
 
 var (
 	Config1 *config.Config = config.New("local", "localhost", "localhost", "docker-pinger", "postgres",
-		"/home/hobonail/go_projects/docker-pinger/backend/migrations", 5432, 9999, time.Second)
+		"/home/hobonail/go_projects/docker-pinger/backend/migrations",
+		"localhost", "/pinger/ping", "/pinger/ping", 5432, 9999, 8888, time.Second)
 )
 
 func TestLoad(t *testing.T) {

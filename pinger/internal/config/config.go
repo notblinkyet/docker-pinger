@@ -14,9 +14,10 @@ var (
 )
 
 type Config struct {
-	Env    string `yaml:"env"`
-	Server Server `yaml:"server"`
-	Api    Api    `yaml:"api"`
+	Delay  time.Duration `yaml:"delay"`
+	Env    string        `yaml:"env"`
+	Server Server        `yaml:"server"`
+	Clinet Client        `yaml:"client"`
 }
 
 type Server struct {
@@ -25,7 +26,7 @@ type Server struct {
 	Timeout time.Duration `yaml:"timeout"`
 }
 
-type Api struct {
+type Client struct {
 	Host         string `yaml:"host"`
 	Port         int    `yaml:"port"`
 	GetEndpoint  string `yaml:"get_endpoint"`
@@ -46,7 +47,7 @@ func Load(path string) (*Config, error) {
 }
 
 func MustLoad() *Config {
-	path := os.Getenv("PING_CONFIG_PATH")
+	path := os.Getenv("PINGER_CONFIG_PATH")
 	if path == "" {
 		panic(ErrFoundConfigPath)
 	}

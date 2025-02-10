@@ -1,8 +1,8 @@
 package services
 
 import (
+	"github.com/notblinkyet/docker-pinger/backend/internal/storage/ping"
 	"github.com/notblinkyet/docker-pinger/backend/pkg/models"
-	"github.com/notblinkyet/docker-pinger/backend/src/storage"
 )
 
 type IPingService interface {
@@ -12,10 +12,10 @@ type IPingService interface {
 }
 
 type PingService struct {
-	Storage storage.IPingStorage
+	Storage ping.IPingStorage
 }
 
-func NewPingService(storage storage.IPingStorage) *PingService {
+func NewPingService(storage ping.IPingStorage) *PingService {
 	return &PingService{
 		Storage: storage,
 	}

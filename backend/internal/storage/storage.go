@@ -7,17 +7,19 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/notblinkyet/docker-pinger/backend/internal/config"
+	"github.com/notblinkyet/docker-pinger/backend/internal/storage/container"
+	"github.com/notblinkyet/docker-pinger/backend/internal/storage/ping"
 )
 
 type Storage struct {
-	Ping      IPingStorage
-	Container IContainerStorage
+	Ping      ping.IPingStorage
+	Container container.IContainerStorage
 }
 
 func NewStorage(pool *pgxpool.Pool) *Storage {
 	return &Storage{
-		Ping:      NewPingStorage(pool),
-		Container: NewContainerStorage(pool),
+		Ping:      ping.NewPingStorage(pool),
+		Container: container.NewContainerStorage(pool),
 	}
 }
 

@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/notblinkyet/docker-pinger/backend/internal/services"
 	"github.com/notblinkyet/docker-pinger/backend/pkg/models"
-	"github.com/notblinkyet/docker-pinger/backend/src/services"
 )
 
 type IPingHandler interface {

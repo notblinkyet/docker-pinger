@@ -1,4 +1,4 @@
-package api
+package client
 
 import (
 	"bytes"
@@ -16,17 +16,21 @@ var (
 	ErrInternalServer = errors.New("internal server error")
 )
 
-type Api struct {
-	Cfg *config.Api
+type Client struct {
+	Cfg *config.Client
 }
 
-func NewApi(cfg *config.Api) *Api {
-	return &Api{
+func NewApi(cfg *config.Client) *Client {
+	return &Client{
 		Cfg: cfg,
 	}
 }
 
-func (a *Api) GetContainers() ([]models.Container, error) {
+type ContainerResponse struct {
+	Data []models.Container `json:"data"`
+}
+
+func (a *Client) GetContainers() ([]string, error) {
 	url := fmt.Sprintf("http://%s:%d%s", a.Cfg.Host, a.Cfg.Port, a.Cfg.GetEndpoint)
 	resp, err := http.Get(url)
 	if err != nil {
@@ -39,16 +43,20 @@ func (a *Api) GetContainers() ([]models.Container, error) {
 		return nil, ErrInternalServer
 	}
 	defer resp.Body.Close()
-	var containers []models.Container
+	var containers ContainerResponse
 
 	err = json.NewDecoder(resp.Body).Decode(&containers)
 	if err != nil {
 		return nil, err
 	}
-	return containers, nil
+	ips := make([]string, len(containers.Data))
+	for i, container := range containers.Data {
+		ips[i] = container.Ip
+	}
+	return ips, nil
 }
 
-func (a *Api) Post(pings []models.Ping) error {
+func (a *Client) Post(pings []models.Ping) error {
 	url := fmt.Sprintf("http://%s:%d%s", a.Cfg.Host, a.Cfg.Port, a.Cfg.PostEndpoint)
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(pings)
