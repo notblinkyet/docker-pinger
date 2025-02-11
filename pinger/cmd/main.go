@@ -12,6 +12,7 @@ import (
 	"github.com/notblinkyet/docker-pinger/pinger/internal/config"
 	"github.com/notblinkyet/docker-pinger/pinger/internal/handlers"
 	"github.com/notblinkyet/docker-pinger/pinger/internal/pinger"
+	"github.com/notblinkyet/docker-pinger/pinger/internal/redis"
 	"github.com/notblinkyet/docker-pinger/pinger/internal/services"
 )
 
@@ -24,7 +25,11 @@ func main() {
 	if err != nil {
 		logger.Fatal(err)
 	}
-	pinger := pinger.NewPinger(ips, client, logger)
+	redis, err := redis.NewRedisClient(&cfg.Redis)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	pinger := pinger.NewPinger(ips, client, logger, redis)
 	layerService := services.NewServices(pinger.Ips)
 	layerHandler := handlers.NewHandlers(layerService)
 	router := gin.Default()

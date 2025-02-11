@@ -11,3 +11,9 @@ client:
   port: 9999
   get_endpoint: "/backend/containers"
   post_endpoint: "/backend/pings"
+
+redis:
+  host: "localhost"
+  port: 6379
+  db: 1
+  exp: 48h

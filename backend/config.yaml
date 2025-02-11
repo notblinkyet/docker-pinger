@@ -12,4 +12,8 @@ server:
   host: "localhost"
   port: 9999
   timeout: 10s
-
+pinger_api:
+  host: "localhost"
+  port: 8888
+  post_endpoint: "/pinger/ping"
+  delete_endpoint: "/pinger/ping"

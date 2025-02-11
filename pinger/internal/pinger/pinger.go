@@ -10,9 +10,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jackc/pgtype"
 	"github.com/notblinkyet/docker-pinger/backend/pkg/models"
 	"github.com/notblinkyet/docker-pinger/pinger/internal/client"
+	"github.com/notblinkyet/docker-pinger/pinger/internal/redis"
 )
 
 type Pinger struct {
@@ -20,9 +20,10 @@ type Pinger struct {
 	count  *atomic.Int64
 	client *client.Client
 	logger *log.Logger
+	redis  *redis.RedisClient
 }
 
-func NewPinger(newIps []string, client *client.Client, logger *log.Logger) *Pinger {
+func NewPinger(newIps []string, client *client.Client, logger *log.Logger, redis *redis.RedisClient) *Pinger {
 	Ips := &sync.Map{}
 	count := &atomic.Int64{}
 	count.Store(int64(len(newIps)))
@@ -34,6 +35,7 @@ func NewPinger(newIps []string, client *client.Client, logger *log.Logger) *Ping
 		count:  count,
 		client: client,
 		logger: logger,
+		redis:  redis,
 	}
 }
 
@@ -46,7 +48,7 @@ func (pinger *Pinger) PingAll() []models.Ping {
 		ip := key.(string)
 		go func(ip string) {
 			defer w.Done()
-			ping := PingOne(ip)
+			ping := pinger.PingOne(ip)
 			m.Lock()
 			pings = append(pings, *ping)
 			m.Unlock()
@@ -57,47 +59,73 @@ func (pinger *Pinger) PingAll() []models.Ping {
 	return pings
 }
 
-func PingOne(ip string) *models.Ping {
+func (pinger *Pinger) PingOne(ip string) *models.Ping {
 	data, err := exec.Command("ping", "-c", "1", "-W", "1", ip).Output()
+	t := time.Now()
 	if err != nil {
+		LastSuccess, err := pinger.redis.Get(ip)
+		if err != nil {
+			pinger.logger.Println(err)
+			return &models.Ping{
+				PingAt:           t,
+				Success:          false,
+				Ip:               ip,
+				WasSuccessBefore: false,
+			}
+		}
 		return &models.Ping{
-			PingAt:  time.Now(),
-			Success: false,
-			Ip:      ip,
+			PingAt:           t,
+			Success:          false,
+			Ip:               ip,
+			WasSuccessBefore: true,
+			LastSuccess:      LastSuccess,
 		}
 	}
 	output := string(data)
 	if strings.Contains(output, "0% packet loss") {
 		re := regexp.MustCompile(`time=([0-9.]+) ms`)
 		matches := re.FindStringSubmatch(output)
+		err := pinger.redis.Set(ip, t)
+		if err != nil {
+			pinger.logger.Println(err)
+		}
 		if len(matches) > 1 {
 			latency, _ := strconv.ParseFloat(matches[1], 64)
 			nanoseconds := int64(latency * 1000000)
 			return &models.Ping{
-				PingAt: time.Now(),
-				LastSuccess: pgtype.Timestamptz{
-					Time: time.Now(),
-				},
-				Success: true,
-				Latency: time.Duration(nanoseconds),
-				Ip:      ip,
+				PingAt:           t,
+				LastSuccess:      t,
+				Success:          true,
+				Latency:          time.Duration(nanoseconds),
+				Ip:               ip,
+				WasSuccessBefore: true,
 			}
 		} else {
 			return &models.Ping{
-				PingAt:  time.Now(),
-				Success: true,
-				Ip:      ip,
-				LastSuccess: pgtype.Timestamptz{
-					Time: time.Now(),
-				},
+				PingAt:           t,
+				Success:          true,
+				Ip:               ip,
+				LastSuccess:      t,
+				WasSuccessBefore: true,
 			}
 		}
-	} else {
+	}
+	LastSuccess, err := pinger.redis.Get(ip)
+	if err != nil {
+		pinger.logger.Println(err)
 		return &models.Ping{
-			PingAt:  time.Now(),
-			Success: false,
-			Ip:      ip,
+			PingAt:           t,
+			Success:          false,
+			Ip:               ip,
+			WasSuccessBefore: false,
 		}
+	}
+	return &models.Ping{
+		PingAt:           t,
+		Success:          false,
+		Ip:               ip,
+		WasSuccessBefore: true,
+		LastSuccess:      LastSuccess,
 	}
 }
 

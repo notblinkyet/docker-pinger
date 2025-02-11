@@ -18,7 +18,7 @@ import (
 func main() {
 	cfg := config.MustLoad()
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-
+	logger.Println(cfg)
 	layerStorage, err := storage.Open(cfg)
 	if err != nil {
 		panic(err)

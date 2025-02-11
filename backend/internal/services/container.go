@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/notblinkyet/docker-pinger/backend/internal/api/pinger"
@@ -34,27 +35,33 @@ func (service *ContainerService) Create(ip string) error {
 
 	go func() {
 		defer wg.Done()
-		err := service.PingerApi.Post(ip)
-		if err != nil {
+		if err := service.PingerApi.Post(ip); err != nil {
 			errChan <- err
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
-		err := service.Storage.Create(ip)
-		if err != nil {
+		if err := service.Storage.Create(ip); err != nil {
 			errChan <- err
 		}
 	}()
 
-	defer close(errChan)
-	wg.Wait()
-	for err := range errChan {
-		return err
-	}
-	return nil
+	go func() {
+		wg.Wait()
+		close(errChan)
+	}()
 
+	errors := make([]error, 0, 2)
+	for err := range errChan {
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("multiple errors: %v", errors)
+	}
+
+	return nil
 }
 
 func (service *ContainerService) Delete(ip string) error {
@@ -79,11 +86,20 @@ func (service *ContainerService) Delete(ip string) error {
 		}
 	}()
 
-	defer close(errChan)
-	wg.Wait()
+	go func() {
+		wg.Wait()
+		close(errChan)
+	}()
+
+	errors := make([]error, 0, 2)
 	for err := range errChan {
-		return err
+		errors = append(errors, err)
 	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("multiple errors: %v", errors)
+	}
+
 	return nil
 }
 

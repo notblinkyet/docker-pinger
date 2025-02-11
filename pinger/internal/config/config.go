@@ -18,6 +18,7 @@ type Config struct {
 	Env    string        `yaml:"env"`
 	Server Server        `yaml:"server"`
 	Clinet Client        `yaml:"client"`
+	Redis  Redis         `yaml:"redis"`
 }
 
 type Server struct {
@@ -31,6 +32,13 @@ type Client struct {
 	Port         int    `yaml:"port"`
 	GetEndpoint  string `yaml:"get_endpoint"`
 	PostEndpoint string `yaml:"post_endpoint"`
+}
+
+type Redis struct {
+	Host string        `yaml:"host"`
+	Port int           `yaml:"port"`
+	Db   int           `yaml:"db"`
+	Exp  time.Duration `yaml:"exp"`
 }
 
 func Load(path string) (*Config, error) {
