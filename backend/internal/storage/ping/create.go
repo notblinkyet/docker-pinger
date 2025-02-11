@@ -8,37 +8,40 @@ import (
 	"github.com/notblinkyet/docker-pinger/backend/pkg/models"
 )
 
-func (storage *PingStorage) Create(pings []models.Ping) {
+func (storage *PingStorage) Create(pings []models.Ping) []error {
 	//const op = "storage/ping/update"
 	ctx := context.Background()
+	errs := make([]error, 0, len(pings))
 	for _, ping := range pings {
 		tx, err := storage.pool.Begin(ctx)
 		if err != nil {
-			//TODO logs
+			errs = append(errs, err)
 			continue
 		}
 		err = Create(tx, &ping, ctx)
 		if err != nil {
-			//TODO: logs
+			errs = append(errs, err)
 			tx.Rollback(ctx)
 			continue
 		}
 		err = tx.Commit(ctx)
 		if err != nil {
-			//TODO: logs
+			errs = append(errs, err)
 		}
 	}
+	return errs
 }
 
 func Create(tx pgx.Tx, ping *models.Ping, ctx context.Context) error {
 	var lastSuccessAt pgtype.Timestamp
-	if ping.WasSuccessBefore == false {
+	if !ping.WasSuccessBefore {
 		lastSuccessAt = pgtype.Timestamp{
 			Status: pgtype.Null,
 		}
 	} else {
 		lastSuccessAt = pgtype.Timestamp{
-			Time: ping.LastSuccess,
+			Status: pgtype.Present,
+			Time:   ping.LastSuccess.UTC(),
 		}
 	}
 	sql := `
@@ -64,19 +67,19 @@ func Create(tx pgx.Tx, ping *models.Ping, ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	row = tx.QueryRow(ctx, sql1, ping.ContainerId, ping.Latency.Nanoseconds(), lastSuccessAt, ping.PingAt)
+	row = tx.QueryRow(ctx, sql1, ping.ContainerId, ping.Latency.Nanoseconds(), lastSuccessAt, ping.PingAt.UTC())
 	err = row.Scan(&ping.Id)
 	if err != nil {
 		return err
 	}
-	tag, err := tx.Exec(ctx, sql2, ping.Id, ping.Latency.Nanoseconds(), lastSuccessAt, ping.PingAt, ping.ContainerId)
+	tag, err := tx.Exec(ctx, sql2, ping.Id, ping.Latency.Nanoseconds(), lastSuccessAt, ping.PingAt.UTC(), ping.ContainerId)
 	if err != nil {
 		return err
 	}
 	if tag.RowsAffected() != 0 {
 		return nil
 	}
-	_, err = tx.Exec(ctx, sql3, ping.Id, ping.Latency.Nanoseconds(), lastSuccessAt, ping.PingAt, ping.ContainerId)
+	_, err = tx.Exec(ctx, sql3, ping.Id, ping.ContainerId, ping.Latency.Nanoseconds(), lastSuccessAt, ping.PingAt.UTC())
 	if err != nil {
 		return err
 	}

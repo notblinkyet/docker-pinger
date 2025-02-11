@@ -1,6 +1,8 @@
 package services
 
 import (
+	"log"
+
 	"github.com/notblinkyet/docker-pinger/backend/internal/storage/ping"
 	"github.com/notblinkyet/docker-pinger/backend/pkg/models"
 )
@@ -13,22 +15,39 @@ type IPingService interface {
 
 type PingService struct {
 	Storage ping.IPingStorage
+	logger  *log.Logger
 }
 
-func NewPingService(storage ping.IPingStorage) *PingService {
+func NewPingService(storage ping.IPingStorage, logger *log.Logger) *PingService {
 	return &PingService{
 		Storage: storage,
+		logger:  logger,
 	}
 }
 
 func (service *PingService) GetAll() ([]models.Ping, error) {
-	return service.Storage.GetAll()
+	pings, err := service.Storage.GetAll()
+	if err != nil {
+		service.logger.Println(err)
+		return pings, err
+	}
+	service.logger.Println(pings)
+	return pings, err
 }
 
 func (service *PingService) GetLast() ([]models.Ping, error) {
-	return service.Storage.GetLast()
+	pings, err := service.Storage.GetLast()
+	if err != nil {
+		service.logger.Println(err)
+		return pings, err
+	}
+	service.logger.Println(pings)
+	return pings, err
 }
 
 func (service *PingService) Create(pings []models.Ping) {
-	service.Storage.Create(pings)
+	errs := service.Storage.Create(pings)
+	if len(errs) != 0 {
+		service.logger.Println(errs)
+	}
 }

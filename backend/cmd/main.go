@@ -26,7 +26,7 @@ func main() {
 	logger.Println("success connect to DB")
 	defer layerStorage.Close()
 	pingerApi := pinger.NewPingerApi(&cfg.PingerApi)
-	layerService := services.NewServices(layerStorage, pingerApi)
+	layerService := services.NewServices(layerStorage, pingerApi, logger)
 	layerHandler := handlers.NewHandlers(layerService)
 
 	router := gin.Default()

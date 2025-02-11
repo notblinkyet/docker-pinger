@@ -34,7 +34,7 @@ func NewRedisClient(cfg *config.Redis) (*RedisClient, error) {
 
 func (redis *RedisClient) Set(ip string, SuccessTime time.Time) error {
 	ctx := context.Background()
-	err := redis.client.Set(ctx, ip, time.ANSIC, redis.exp).Err()
+	err := redis.client.Set(ctx, ip, SuccessTime.UTC().String(), redis.exp).Err()
 	return err
 }
 
@@ -44,6 +44,6 @@ func (redis *RedisClient) Get(ip string) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-	return time.Parse(time.ANSIC, res)
+	return time.Parse(time.UTC.String(), res)
 
 }

@@ -1,5 +1,5 @@
 env: "local"
-delay: 5s
+delta: 1s
 
 server:
   host: "localhost"

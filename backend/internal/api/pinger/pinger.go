@@ -53,7 +53,7 @@ func (a *PingerApi) Post(ip string) error {
 }
 
 func (a *PingerApi) Delete(ip string) error {
-	url := fmt.Sprintf("http://%s:%d%s/:%s", a.cfg.Host, a.cfg.Port, a.cfg.PostEndpoint, ip)
+	url := fmt.Sprintf("http://%s:%d%s/%s", a.cfg.Host, a.cfg.Port, a.cfg.PostEndpoint, ip)
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return err

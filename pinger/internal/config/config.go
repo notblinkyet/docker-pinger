@@ -14,7 +14,7 @@ var (
 )
 
 type Config struct {
-	Delay  time.Duration `yaml:"delay"`
+	Delta  time.Duration `yaml:"delta"`
 	Env    string        `yaml:"env"`
 	Server Server        `yaml:"server"`
 	Clinet Client        `yaml:"client"`

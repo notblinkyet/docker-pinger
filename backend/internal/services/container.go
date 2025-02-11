@@ -1,7 +1,7 @@
 package services
 
 import (
-	"fmt"
+	"log"
 	"sync"
 
 	"github.com/notblinkyet/docker-pinger/backend/internal/api/pinger"
@@ -18,12 +18,14 @@ type IContainerService interface {
 type ContainerService struct {
 	Storage   container.IContainerStorage
 	PingerApi *pinger.PingerApi
+	logger    *log.Logger
 }
 
-func NewContainerService(storage container.IContainerStorage, api *pinger.PingerApi) *ContainerService {
+func NewContainerService(storage container.IContainerStorage, api *pinger.PingerApi, logger *log.Logger) *ContainerService {
 	return &ContainerService{
 		Storage:   storage,
 		PingerApi: api,
+		logger:    logger,
 	}
 }
 
@@ -58,7 +60,8 @@ func (service *ContainerService) Create(ip string) error {
 	}
 
 	if len(errors) > 0 {
-		return fmt.Errorf("multiple errors: %v", errors)
+		service.logger.Println(errors)
+		return errors[0]
 	}
 
 	return nil
@@ -97,12 +100,18 @@ func (service *ContainerService) Delete(ip string) error {
 	}
 
 	if len(errors) > 0 {
-		return fmt.Errorf("multiple errors: %v", errors)
+		service.logger.Println(errors)
+		return errors[0]
 	}
 
 	return nil
 }
 
 func (service *ContainerService) GetAll() ([]models.Container, error) {
-	return service.Storage.GetAll()
+	containers, err := service.Storage.GetAll()
+	if err != nil {
+		service.logger.Println(err)
+	}
+	service.logger.Println(containers)
+	return containers, err
 }

@@ -28,6 +28,7 @@ func (handler *PingHandler) GetAll(ctx *gin.Context) {
 	pings, err := handler.PingService.GetAll()
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"data": pings})
 }
@@ -36,14 +37,16 @@ func (handler *PingHandler) GetLast(ctx *gin.Context) {
 	pings, err := handler.PingService.GetLast()
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"data": pings})
 }
 
 func (handler *PingHandler) Create(ctx *gin.Context) {
 	var data []models.Ping
-	if err := ctx.ShouldBindBodyWithJSON(data); err != nil {
+	if err := ctx.ShouldBindBodyWithJSON(&data); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 	handler.PingService.Create(data)
 	ctx.AbortWithStatus(http.StatusOK)

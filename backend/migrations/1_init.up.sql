@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS pings(
     latency BIGINT NOT NULL,
     last_success_at TIMESTAMP DEFAULT NULL,
     ping_at TIMESTAMP,
-    FOREIGN KEY (container_id) REFERENCES container (id)
+    FOREIGN KEY (container_id) REFERENCES containers (id)
 );
 
 ;

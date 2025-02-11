@@ -6,7 +6,7 @@ import (
 )
 
 type IPingStorage interface {
-	Create([]models.Ping)
+	Create([]models.Ping) []error
 	GetLast() ([]models.Ping, error)
 	GetAll() ([]models.Ping, error)
 	Close()

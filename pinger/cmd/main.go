@@ -18,13 +18,14 @@ import (
 
 func main() {
 	cfg := config.MustLoad()
-	client := client.NewApi(&cfg.Clinet)
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-	_, _ = client, logger
+	logger.Println(cfg)
+	client := client.NewApi(&cfg.Clinet)
 	ips, err := client.GetContainers()
 	if err != nil {
 		logger.Fatal(err)
 	}
+	logger.Println(ips)
 	redis, err := redis.NewRedisClient(&cfg.Redis)
 	if err != nil {
 		logger.Fatal(err)
@@ -46,7 +47,7 @@ func main() {
 
 	go app.Run()
 
-	go pinger.PingOnceAfterDelay(cfg.Delay)
+	go pinger.StartPinging(cfg.Delta)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)

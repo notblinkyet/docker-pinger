@@ -61,6 +61,7 @@ func (pinger *Pinger) PingAll() []models.Ping {
 
 func (pinger *Pinger) PingOne(ip string) *models.Ping {
 	data, err := exec.Command("ping", "-c", "1", "-W", "1", ip).Output()
+	pinger.logger.Println(string(data))
 	t := time.Now()
 	if err != nil {
 		LastSuccess, err := pinger.redis.Get(ip)
@@ -129,10 +130,16 @@ func (pinger *Pinger) PingOne(ip string) *models.Ping {
 	}
 }
 
-func (pinger *Pinger) PingOnceAfterDelay(delay time.Duration) {
-	time.AfterFunc(delay, func() {
+func (pinger *Pinger) StartPinging(delta time.Duration) {
+	ticker := time.NewTicker(delta)
+	defer ticker.Stop()
+
+	for range ticker.C {
 		pings := pinger.PingAll()
+		pinger.logger.Println(pings)
 		err := pinger.client.Post(pings)
-		pinger.logger.Println(err)
-	})
+		if err != nil {
+			pinger.logger.Println(err)
+		}
+	}
 }

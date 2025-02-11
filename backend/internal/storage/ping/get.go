@@ -12,10 +12,10 @@ import (
 func (storage *PingStorage) Get(from, op string) ([]models.Ping, error) {
 	ctx := context.Background()
 	sql := fmt.Sprintf(`
-		SELECT c.id, p.id, p.latency, p.last_success_at, p.ping_at
+		SELECT c.ip, p.id, p.latency, p.last_success_at, p.ping_at
 		FROM %s p JOIN containers c ON p.container_id=c.id
 	`, from)
-	rows, err := storage.pool.Query(ctx, sql, from)
+	rows, err := storage.pool.Query(ctx, sql)
 	if err != nil {
 		//TODO logs
 		return nil, fmt.Errorf("%s: %w", op, err)
@@ -27,7 +27,7 @@ func (storage *PingStorage) Get(from, op string) ([]models.Ping, error) {
 		var lastSuccessAt pgtype.Timestamp
 		var latency int
 		err = rows.Scan(
-			&ping.ContainerId,
+			&ping.Ip,
 			&ping.Id,
 			&latency,
 			&lastSuccessAt,
