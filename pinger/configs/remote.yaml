@@ -1,0 +1,19 @@
+env: "prod"
+delta: 10s
+
+server:
+  host: "pinger"
+  port: 8888
+  timeout: 10s
+
+client:
+  host: "pinger-backend"
+  port: 9999
+  get_endpoint: "/backend/containers"
+  post_endpoint: "/backend/pings"
+
+redis:
+  host: "pinger-redis"
+  port: 6379
+  db: 1
+  exp: 48h

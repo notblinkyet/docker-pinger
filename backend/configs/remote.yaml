@@ -1,0 +1,24 @@
+env: "prod" #dev/prod
+
+migration_path: "./migrations"
+
+storage:
+  host: "pinger-psql"
+  port: 5432
+  username: "admin"
+  dbname: "docker_pinger"
+
+server:
+  host: "0.0.0.0"
+  port: 9999
+  timeout: 10s
+
+pinger_api:
+  host: "pinger"
+  port: 8888
+  post_endpoint: "/pinger/ping"
+  delete_endpoint: "/pinger/ping"
+
+frontend:
+  host: "localhost"
+  port: 5173

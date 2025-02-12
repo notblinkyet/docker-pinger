@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/notblinkyet/docker-pinger/pinger/internal/app"
 	"github.com/notblinkyet/docker-pinger/pinger/internal/client"
@@ -33,7 +36,16 @@ func main() {
 	pinger := pinger.NewPinger(ips, client, logger, redis)
 	layerService := services.NewServices(pinger.Ips)
 	layerHandler := handlers.NewHandlers(layerService)
+	gin.SetMode(gin.DebugMode)
 	router := gin.Default()
+	router.Use(
+		cors.New(cors.Config{
+			AllowOrigins: []string{fmt.Sprintf("http://%s:%d", cfg.Clinet.Host, cfg.Clinet.Port)},
+			AllowMethods: []string{"POST", "DELETE"},
+			MaxAge:       12 * time.Hour,
+		}),
+		gin.Logger(),
+	)
 	main := router.Group("/pinger")
 	{
 		pings := main.Group("/ping")

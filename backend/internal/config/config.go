@@ -33,12 +33,18 @@ type PingerApi struct {
 	DeleteEndpoint string `yaml:"delete_endpoint"`
 }
 
+type Frontend struct {
+	Host string `yaml:"host"`
+	Port int    `yaml:"port"`
+}
+
 type Config struct {
 	Env           string    `yaml:"env"`
 	MigrationPath string    `yaml:"migration_path"`
 	Storage       Storage   `yaml:"storage"`
 	Server        Server    `yaml:"server"`
 	PingerApi     PingerApi `yaml:"pinger_api"`
+	Frontend      Frontend  `yaml:"frontend"`
 }
 
 func Load(path string) (*Config, error) {

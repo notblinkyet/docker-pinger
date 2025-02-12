@@ -1,0 +1,78 @@
+services:
+
+  postgres:
+    image: postgres:14-alpine
+    container_name: pinger-psql
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_DB=docker_pinger
+      - POSTGRES_PASSWORD=admin
+    ports:
+      - "5000:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "admin", "-d", "docker_pinger"]
+      interval: 10s
+      timeout: 10s
+      retries: 5  
+  redis:
+    image: redis:alpine
+    container_name: pinger-redis
+    ports:
+      - "6000:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    command: ["redis-server", "--requirepass", admin]
+  
+  migrator:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.migrator
+    container_name: pinger-migrator
+    depends_on:
+      postgres:
+        condition: service_healthy
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.backend
+    container_name: pinger-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+
+    ports:
+      - "9999:9999"
+
+  pinger:
+    build: 
+      context: ./pinger
+      dockerfile: Dockerfile.pinger
+    container_name: pinger
+    depends_on:
+      - backend
+    ports:
+      - "8887:8888"
+
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+      args:
+        - VITE_BACKEND_URL=http://0.0.0.0:9999/backend
+        - VITE_REFRESH_INTERVAL=5000
+    container_name: pinger-frontend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    ports:
+      - "5173:5173"

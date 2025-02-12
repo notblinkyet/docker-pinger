@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/notblinkyet/docker-pinger/backend/internal/api/pinger"
 	"github.com/notblinkyet/docker-pinger/backend/internal/app"
@@ -29,7 +32,18 @@ func main() {
 	layerService := services.NewServices(layerStorage, pingerApi, logger)
 	layerHandler := handlers.NewHandlers(layerService)
 
+	gin.SetMode(gin.DebugMode)
 	router := gin.Default()
+	router.Use(gin.Recovery(), gin.Logger())
+	router.Use(cors.New(cors.Config{
+		AllowOrigins: []string{
+			fmt.Sprintf("http://%s:%d", cfg.PingerApi.Host, cfg.PingerApi.Port),
+			fmt.Sprintf("http://%s:%d", cfg.Frontend.Host, cfg.Frontend.Port),
+		},
+		AllowMethods: []string{"POST", "DELETE", "GET"},
+		AllowHeaders: []string{"Origin", "Content-Type"},
+		MaxAge:       12 * time.Hour,
+	}))
 	api := router.Group("/backend")
 	{
 		containers := api.Group("/containers")

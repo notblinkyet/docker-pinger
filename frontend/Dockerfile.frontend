@@ -1,0 +1,26 @@
+FROM node:20 AS build
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+
+RUN npm install
+
+COPY . .
+
+ARG VITE_BACKEND_URL
+ARG VITE_REFRESH_INTERVAL
+
+ENV VITE_BACKEND_URL=${VITE_BACKEND_URL}
+ENV VITE_REFRESH_INTERVAL=${VITE_REFRESH_INTERVAL}
+
+RUN npm run build
+
+FROM node:20 AS serve
+
+RUN npm install -g serve
+
+WORKDIR /app
+COPY --from=build /app/dist .
+
+CMD ["serve", "-s", ".", "-l", "5173"]

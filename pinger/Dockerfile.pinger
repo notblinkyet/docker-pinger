@@ -1,0 +1,14 @@
+FROM golang:latest
+
+RUN mkdir /app
+WORKDIR /app
+ENV PINGER_CONFIG_PATH=./configs/remote.yaml
+ENV REDIS_PASS=admin
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN go build -o main ./cmd/main.go
+CMD [ "./main" ]
