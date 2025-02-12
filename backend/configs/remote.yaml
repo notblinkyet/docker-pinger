@@ -14,7 +14,7 @@ server:
   timeout: 10s
 
 pinger_api:
-  host: "pinger"
+  host: "192.168.1.5"
   port: 8888
   post_endpoint: "/pinger/ping"
   delete_endpoint: "/pinger/ping"

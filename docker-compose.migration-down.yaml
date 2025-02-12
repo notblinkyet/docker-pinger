@@ -1,0 +1,25 @@
+services:
+
+  postgres:
+    image: postgres:14-alpine
+    container_name: pinger-psql
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_DB=docker_pinger
+      - POSTGRES_PASSWORD=admin
+    ports:
+      - "5000:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "admin", "-d", "docker_pinger"]
+      interval: 10s
+      timeout: 10s
+      retries: 5  
+  
+  migrator:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.migrator_down
+    container_name: pinger-migrator
+    depends_on:
+      postgres:
+        condition: service_healthy

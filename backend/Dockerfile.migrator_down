@@ -1,0 +1,17 @@
+FROM golang:latest
+
+RUN mkdir /app
+WORKDIR /app
+ENV BACKEND_CONFIG_PATH=./configs/remote.yaml
+ENV POSTGRES_PASS=admin
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY ./migrations ./migrations
+COPY ./internal ./internal
+COPY ./cmd ./cmd
+COPY ./configs ./configs
+
+RUN go build -o main ./cmd/migrator/main.go
+CMD [ "./main", "-d"]

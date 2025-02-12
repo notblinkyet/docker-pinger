@@ -55,9 +55,9 @@ services:
       dockerfile: Dockerfile.pinger
     container_name: pinger
     depends_on:
-      - backend
-    ports:
-      - "8887:8888"
+      backend:
+        condition: service_started
+    network_mode: host
 
   frontend:
     build: 

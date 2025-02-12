@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"log"
 	"sync"
 
@@ -38,14 +39,14 @@ func (service *ContainerService) Create(ip string) error {
 	go func() {
 		defer wg.Done()
 		if err := service.PingerApi.Post(ip); err != nil {
-			errChan <- err
+			errChan <- fmt.Errorf("from pinger:%v", err)
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
 		if err := service.Storage.Create(ip); err != nil {
-			errChan <- err
+			errChan <- fmt.Errorf("from storage:%v", err)
 		}
 	}()
 
@@ -77,7 +78,7 @@ func (service *ContainerService) Delete(ip string) error {
 		defer wg.Done()
 		err := service.PingerApi.Delete(ip)
 		if err != nil {
-			errChan <- err
+			errChan <- fmt.Errorf("from pinger:%v", err)
 		}
 	}()
 
@@ -85,7 +86,7 @@ func (service *ContainerService) Delete(ip string) error {
 		defer wg.Done()
 		err := service.Storage.Delete(ip)
 		if err != nil {
-			errChan <- err
+			errChan <- fmt.Errorf("from storage:%v", err)
 		}
 	}()
 

@@ -11,4 +11,5 @@ RUN go mod download
 COPY . .
 
 RUN go build -o main ./cmd/main.go
+RUN apt-get update && apt-get install -y iputils-ping
 CMD [ "./main" ]
