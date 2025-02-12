@@ -39,7 +39,7 @@
 
 ## **API Эндпоинты**  
 
-### **Бэкенд (``)**  
+### **Бэкенд (`/backend`)**  
 | Метод | Эндпоинт | Описание |
 |--------|----------------------|----------------------------------|
 | `POST` | `/backend/containers` | Добавить IP в отслеживаемые |
@@ -101,7 +101,7 @@ cd docker-pinger
 # pinger/configs/local.yaml
 # frontend/.env
 
-# 3. Запустить базы данных (PostgreSQL, Redis)
+# 3. Установить переменные окружения
 cd backend && export POSTGRES_PASS= && export BACKEND_CONFIG_PATH= && cd ..
 cd pinger && export REDIS_PASS= && export PINGER_CONFIG_PATH= && cd ..
 
@@ -144,6 +144,8 @@ docker compose -f docker-compose.main.yaml up --build
 
 - Добавить **авторизацию**  
 - Улучшить **логирование и мониторинг**  
+- Добавить **очередь сообщений**
+- Добавить **балансировщик**
 - Оптимизировать запросы к **Redis**  
 
 ---
